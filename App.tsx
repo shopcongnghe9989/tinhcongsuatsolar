@@ -358,6 +358,10 @@ export default function App() {
             <Zap size={20} className={selectedAppliances.length > 0 ? "fill-yellow-400 text-yellow-400" : ""} />
             Xem Báo Cáo Tư Vấn
           </button>
+          
+          <div className="mt-4 text-center">
+            <p className="text-xs text-slate-400 italic">tool design by Lê Sơn IT</p>
+          </div>
         </div>
       </aside>
 

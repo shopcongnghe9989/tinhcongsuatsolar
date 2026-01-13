@@ -11,16 +11,16 @@ interface ApplianceCardProps {
 }
 
 const getIcon = (category: string) => {
-  const className = "text-slate-500";
   const size = 16;
   switch (category) {
-    case 'Làm mát': return <Wind className={className} size={size} />;
-    case 'Gia dụng': return <Waves className={className} size={size} />;
-    case 'Giải trí': return <Tv className={className} size={size} />;
-    case 'Công việc': return <Monitor className={className} size={size} />;
-    case 'Bếp': return <CookingPot className={className} size={size} />;
-    case 'Chiếu sáng': return <Lightbulb className={className} size={size} />;
-    default: return <Zap className={className} size={size} />;
+    case 'Làm mát': return <div className="p-1 bg-blue-100 text-blue-600 rounded-md"><Wind size={size} /></div>;
+    case 'Gia dụng': return <div className="p-1 bg-purple-100 text-purple-600 rounded-md"><Waves size={size} /></div>;
+    case 'Giải trí': return <div className="p-1 bg-pink-100 text-pink-600 rounded-md"><Tv size={size} /></div>;
+    case 'Công việc': return <div className="p-1 bg-slate-100 text-slate-600 rounded-md"><Monitor size={size} /></div>;
+    case 'Bếp': return <div className="p-1 bg-orange-100 text-orange-600 rounded-md"><CookingPot size={size} /></div>;
+    case 'Chiếu sáng': return <div className="p-1 bg-yellow-100 text-yellow-600 rounded-md"><Lightbulb size={size} /></div>;
+    case 'Khác': return <div className="p-1 bg-emerald-100 text-emerald-600 rounded-md"><Zap size={size} /></div>;
+    default: return <div className="p-1 bg-gray-100 text-gray-600 rounded-md"><Zap size={size} /></div>;
   }
 };
 
@@ -40,12 +40,12 @@ export const ApplianceCard: React.FC<ApplianceCardProps> = ({ appliance, onAdd }
       {/* Info */}
       <div className="ml-4 flex-1">
         <h3 className="font-semibold text-slate-800 text-sm">{appliance.name}</h3>
-        <div className="flex items-center gap-2 mt-1 text-xs text-slate-500">
-          <span className="flex items-center gap-1 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">
+        <div className="flex items-center gap-2 mt-2 text-xs text-slate-500">
+          <span className="flex items-center gap-1.5 font-medium">
              {getIcon(appliance.category)} {appliance.category}
           </span>
-          <span className="flex items-center gap-1 bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded border border-emerald-100 font-medium">
-             <Zap size={12} /> {appliance.defaultWatts}W
+          <span className="flex items-center gap-1 bg-slate-100 text-slate-600 px-2 py-1 rounded-md border border-slate-200 font-semibold ml-2">
+             <Zap size={10} className="fill-slate-400" /> {appliance.defaultWatts}W
           </span>
         </div>
       </div>
