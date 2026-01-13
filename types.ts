@@ -16,6 +16,7 @@ export interface SolarConfig {
   peakSunHours: number; // Average sun hours per day (e.g., 4.5 for South Vietnam)
   panelWattage: number; // Wattage of a single panel (e.g., 450W, 550W)
   systemEfficiency: number; // Usually 0.75 - 0.85
+  includeBattery: boolean; // Option to include storage battery
 }
 
 export interface Inverter {
@@ -32,4 +33,5 @@ export interface CalculationResult {
   numberOfPanels: number;
   estimatedDailyProductionKWh: number;
   recommendedInverter: Inverter | null;
+  recommendedBatterySizeKWh?: number; // Recommended battery capacity
 }

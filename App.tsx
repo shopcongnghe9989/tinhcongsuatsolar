@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Plus, Trash2, Calculator, Zap, Settings, MapPin, Clock, Gauge, Search, X } from 'lucide-react';
+import { Plus, Trash2, Calculator, Zap, Settings, MapPin, Clock, Gauge, Search, X, Banknote, RotateCcw, Battery, BatteryCharging } from 'lucide-react';
 import { APPLIANCES_DB, REGIONS, PANEL_OPTIONS, INVERTER_OPTIONS } from './constants';
 import { Appliance, SelectedAppliance, SolarConfig, CalculationResult } from './types';
 import { ApplianceCard } from './components/ApplianceCard';
@@ -7,6 +7,12 @@ import { ResultsReport } from './components/ResultsReport';
 
 export default function App() {
   // --- STATE ---
+  const [activeTab, setActiveTab] = useState<'input' | 'report'>('input');
+  
+  // Calculation Mode: 'device' (Manual list) or 'bill' (Money based)
+  const [calcMode, setCalcMode] = useState<'device' | 'bill'>('device');
+  const [monthlyBill, setMonthlyBill] = useState<number>(1000000); // Default 1M VND
+
   const [selectedAppliances, setSelectedAppliances] = useState<SelectedAppliance[]>(() => {
     try {
       const saved = localStorage.getItem('solar_appliances');
@@ -17,8 +23,6 @@ export default function App() {
     }
   });
 
-  const [activeTab, setActiveTab] = useState<'input' | 'report'>('input');
-  
   // Search & Filter State
   const [searchTerm, setSearchTerm] = useState('');
   
@@ -33,26 +37,30 @@ export default function App() {
   const [config, setConfig] = useState<SolarConfig>(() => {
     try {
       const saved = localStorage.getItem('solar_config');
+      // Default region South (Index 2 in constants) usually has ~5.2 hours, so we default logic below
       return saved ? JSON.parse(saved) : {
-        peakSunHours: 4.8,
+        peakSunHours: 5.2, // Default for South
         panelWattage: 450,
-        systemEfficiency: 0.8
+        systemEfficiency: 0.8,
+        includeBattery: false
       };
     } catch (e) {
       return {
-        peakSunHours: 4.8,
+        peakSunHours: 5.2,
         panelWattage: 450,
-        systemEfficiency: 0.8
+        systemEfficiency: 0.8,
+        includeBattery: false
       };
     }
   });
 
+  // Default to Index 2 (Miền Nam) if not saved
   const [selectedRegionIndex, setSelectedRegionIndex] = useState(() => {
     try {
       const saved = localStorage.getItem('solar_region_index');
-      return saved ? Number(saved) : 1;
+      return saved ? Number(saved) : 2; // Default 2: Miền Nam
     } catch {
-      return 1;
+      return 2;
     }
   });
 
@@ -65,6 +73,8 @@ export default function App() {
 
   // --- HANDLERS ---
   const handleAddAppliance = (appliance: Appliance) => {
+    if (calcMode === 'bill') setCalcMode('device');
+
     setSelectedAppliances(prev => {
       const existing = prev.find(p => p.id === appliance.id);
       if (existing) {
@@ -122,12 +132,25 @@ export default function App() {
     setConfig(prev => ({ ...prev, peakSunHours: REGIONS[index].sunHours }));
   };
 
+  const toggleBattery = () => {
+    setConfig(prev => ({ ...prev, includeBattery: !prev.includeBattery }));
+  };
+
   // --- CALCULATIONS ---
   const result: CalculationResult = useMemo(() => {
-    const totalDailyConsumptionWh = selectedAppliances.reduce((sum, item) => {
-      const power = item.watts !== undefined ? item.watts : item.defaultWatts;
-      return sum + (item.quantity * power * item.hoursPerDay);
-    }, 0);
+    let totalDailyConsumptionWh = 0;
+    
+    if (calcMode === 'device') {
+      totalDailyConsumptionWh = selectedAppliances.reduce((sum, item) => {
+        const power = item.watts !== undefined ? item.watts : item.defaultWatts;
+        return sum + (item.quantity * power * item.hoursPerDay);
+      }, 0);
+    } else {
+      // Bill Mode Calculation
+      const avgPricePerKWh = 2500;
+      const monthlyKWh = monthlyBill / avgPricePerKWh;
+      totalDailyConsumptionWh = (monthlyKWh * 1000) / 30;
+    }
 
     const requiredSystemSizeWatts = totalDailyConsumptionWh > 0 
       ? (totalDailyConsumptionWh / config.peakSunHours) / config.systemEfficiency
@@ -139,15 +162,25 @@ export default function App() {
 
     const suitableInverter = INVERTER_OPTIONS.find(inv => inv.capacity >= requiredSystemSizeKWp * 0.85) || INVERTER_OPTIONS[INVERTER_OPTIONS.length - 1];
 
+    // Calculate Battery if selected
+    // Rule of thumb: Storage for evening usage ~ 40-50% of daily generation for hybrid
+    let recommendedBatterySizeKWh = 0;
+    if (config.includeBattery) {
+       // Estimate battery needed to store ~4 hours of peak load or 40% of daily production
+       recommendedBatterySizeKWh = Math.ceil((estimatedDailyProductionKWh * 0.4) * 10) / 10;
+       if (recommendedBatterySizeKWh < 2.4) recommendedBatterySizeKWh = 2.4; // Minimum practical size (e.g. 1 module)
+    }
+
     return {
       totalDailyConsumptionWh,
       monthlyConsumptionKWh: (totalDailyConsumptionWh * 30) / 1000,
       requiredSystemSizeKWp,
       numberOfPanels,
       estimatedDailyProductionKWh: Math.round(estimatedDailyProductionKWh * 10) / 10,
-      recommendedInverter: suitableInverter
+      recommendedInverter: suitableInverter,
+      recommendedBatterySizeKWh: config.includeBattery ? recommendedBatterySizeKWh : undefined
     };
-  }, [selectedAppliances, config]);
+  }, [selectedAppliances, config, calcMode, monthlyBill]);
 
   const filteredAppliances = useMemo(() => {
     return APPLIANCES_DB.filter(app => 
@@ -171,7 +204,7 @@ export default function App() {
     <div className="min-h-screen flex flex-col md:flex-row bg-slate-50 font-sans">
       {/* LEFT CONTENT: SELECTION & CONFIG */}
       <main className="flex-1 p-4 md:p-8 overflow-y-auto h-screen relative">
-        <header className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <header className="mb-6 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-slate-900 flex items-center gap-3">
               <Zap className="text-yellow-500 fill-yellow-500" />
@@ -181,20 +214,20 @@ export default function App() {
           </div>
           
           {/* Config Summary / Quick Toggle */}
-          <div className="bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm flex items-center gap-4 text-sm">
+          <div className="bg-white px-3 py-2 rounded-lg border border-slate-200 shadow-sm flex flex-wrap items-center gap-3 text-sm">
              <div className="flex items-center gap-2">
                 <MapPin size={16} className="text-emerald-500" />
                 <select 
                   value={selectedRegionIndex}
                   onChange={(e) => handleRegionChange(Number(e.target.value))}
-                  className="bg-transparent font-medium text-slate-700 focus:outline-none cursor-pointer hover:text-emerald-600"
+                  className="bg-transparent font-medium text-slate-700 focus:outline-none cursor-pointer hover:text-emerald-600 max-w-[140px]"
                 >
                   {REGIONS.map((region, idx) => (
                     <option key={idx} value={idx}>{region.name}</option>
                   ))}
                 </select>
              </div>
-             <div className="h-4 w-px bg-slate-200"></div>
+             <div className="h-4 w-px bg-slate-200 hidden sm:block"></div>
              <div className="flex items-center gap-2">
                 <Settings size={16} className="text-blue-500" />
                  <select 
@@ -206,6 +239,16 @@ export default function App() {
                     <option key={opt.watts} value={opt.watts}>{opt.label}</option>
                   ))}
                 </select>
+             </div>
+             <div className="h-4 w-px bg-slate-200 hidden sm:block"></div>
+             
+             {/* Battery Toggle */}
+             <div 
+               onClick={toggleBattery}
+               className={`flex items-center gap-2 px-3 py-1.5 rounded-full cursor-pointer transition-all select-none ${config.includeBattery ? 'bg-emerald-100 text-emerald-700 ring-1 ring-emerald-500' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
+             >
+                <BatteryCharging size={16} className={config.includeBattery ? 'fill-current' : ''} />
+                <span className="font-semibold text-xs">Pin lưu trữ</span>
              </div>
           </div>
         </header>
@@ -259,81 +302,141 @@ export default function App() {
         </div>
       </main>
 
-      {/* RIGHT SIDEBAR: CART */}
+      {/* RIGHT SIDEBAR: CALCULATION HUB */}
       <aside className="w-full md:w-[400px] bg-white border-l border-slate-200 shadow-xl flex flex-col h-screen sticky top-0 z-30">
-        <div className="p-5 border-b border-slate-100 bg-slate-50/80 backdrop-blur-sm">
-          <h2 className="font-bold text-slate-800 flex items-center gap-2">
-            <Calculator size={20} className="text-emerald-600" />
-            Thiết bị đã chọn <span className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full text-xs">{selectedAppliances.length}</span>
-          </h2>
+        
+        {/* Sidebar Header & Tabs */}
+        <div className="border-b border-slate-100 bg-slate-50/80 backdrop-blur-sm">
+          <div className="p-5 pb-3">
+             <h2 className="font-bold text-slate-800 flex items-center gap-2 mb-4">
+              <Calculator size={20} className="text-emerald-600" />
+              Tính toán hệ thống
+            </h2>
+            
+            {/* TABS */}
+            <div className="flex bg-slate-200 p-1 rounded-xl">
+              <button 
+                onClick={() => setCalcMode('device')}
+                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-semibold transition-all ${calcMode === 'device' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+              >
+                <Zap size={16} /> Theo thiết bị
+              </button>
+              <button 
+                onClick={() => setCalcMode('bill')}
+                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-semibold transition-all ${calcMode === 'bill' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+              >
+                <Banknote size={16} /> Theo tiền điện
+              </button>
+            </div>
+          </div>
         </div>
 
+        {/* Sidebar Content Area */}
         <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar bg-slate-50">
-          {selectedAppliances.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-slate-400">
-              <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
-                <Plus size={24} className="text-slate-300" />
+          
+          {/* CONTENT: BILL MODE */}
+          {calcMode === 'bill' && (
+            <div className="animate-fade-in space-y-4">
+              <div className="bg-white border border-emerald-200 rounded-xl p-6 shadow-sm">
+                <label className="block text-sm font-medium text-slate-700 mb-2">Nhập tiền điện trung bình / tháng (VNĐ)</label>
+                <div className="relative">
+                  <input 
+                    type="number"
+                    value={monthlyBill}
+                    onChange={(e) => setMonthlyBill(Number(e.target.value))}
+                    step={100000}
+                    className="w-full pl-4 pr-12 py-3 text-lg font-bold text-slate-800 bg-emerald-50 border border-emerald-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                  />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-emerald-600 font-bold text-sm">đ</span>
+                </div>
+                <div className="mt-3 text-xs text-slate-500 flex justify-between">
+                   <span>Quy đổi sơ bộ:</span>
+                   <span className="font-medium text-slate-700">~{Math.round(monthlyBill / 2500)} kWh/tháng</span>
+                </div>
               </div>
-              <p>Danh sách trống</p>
-              <p className="text-sm mt-1 opacity-70">Thêm thiết bị từ danh sách bên trái</p>
-            </div>
-          ) : (
-            selectedAppliances.map(item => (
-              <div key={item.id} className="bg-white border border-slate-200 rounded-xl p-3 shadow-sm hover:shadow-md transition-all group">
-                <div className="flex justify-between items-start mb-2">
-                  <div className="flex items-center gap-2">
-                    <div className="font-semibold text-slate-800 text-sm line-clamp-1" title={item.name}>{item.name}</div>
-                  </div>
-                  <button 
-                    onClick={() => handleRemoveAppliance(item.id)} 
-                    className="text-slate-300 hover:text-red-500 transition-colors p-1 -mr-1"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-                
-                <div className="flex items-center justify-between mb-3 bg-slate-50 rounded-lg p-1.5 border border-slate-100">
-                   <span className="text-xs text-slate-500 font-medium ml-1">Số lượng</span>
-                   <div className="flex items-center gap-2">
-                      <button onClick={() => handleUpdateQuantity(item.id, -1)} className="w-6 h-6 flex items-center justify-center bg-white rounded shadow-sm text-slate-600 hover:text-emerald-600 text-xs font-bold">-</button>
-                      <span className="font-semibold w-6 text-center text-sm text-slate-700">{item.quantity}</span>
-                      <button onClick={() => handleUpdateQuantity(item.id, 1)} className="w-6 h-6 flex items-center justify-center bg-white rounded shadow-sm text-slate-600 hover:text-emerald-600 text-xs font-bold">+</button>
-                    </div>
-                </div>
 
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div>
-                    <label className="text-[10px] uppercase tracking-wider text-slate-400 font-bold block mb-1 flex items-center gap-1">
-                      <Gauge size={10} /> Công suất (W)
-                    </label>
-                    <input 
-                      type="number" 
-                      min="0"
-                      value={item.watts}
-                      onChange={(e) => handleUpdateWatts(item.id, parseFloat(e.target.value))}
-                      className="w-full bg-white border border-slate-200 rounded-md px-2 py-1 text-center text-slate-700 font-medium focus:ring-1 focus:ring-emerald-500 focus:outline-none text-xs"
-                    />
-                  </div>
-                  
-                  <div>
-                     <label className="text-[10px] uppercase tracking-wider text-slate-400 font-bold block mb-1 flex items-center gap-1">
-                      <Clock size={10} /> Dùng (h/ngày)
-                    </label>
-                    <input 
-                      type="number" 
-                      min="0" max="24" step="0.5"
-                      value={item.hoursPerDay}
-                      onChange={(e) => handleUpdateHours(item.id, parseFloat(e.target.value))}
-                      className="w-full bg-white border border-slate-200 rounded-md px-2 py-1 text-center text-slate-700 font-medium focus:ring-1 focus:ring-emerald-500 focus:outline-none text-xs"
-                    />
-                  </div>
-                </div>
-                <div className="mt-2 pt-2 border-t border-slate-50 flex justify-between items-center">
-                  <span className="text-[10px] text-slate-400">Tiêu thụ:</span>
-                  <span className="font-bold text-emerald-600 text-xs">{(item.quantity * item.watts * item.hoursPerDay).toLocaleString()} Wh/ngày</span>
-                </div>
+              <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 text-sm text-blue-800 flex gap-3">
+                <RotateCcw className="shrink-0 mt-0.5" size={18} />
+                <p>Hệ thống sẽ ước tính công suất dựa trên giá điện trung bình 2.500đ/kWh. Kết quả mang tính chất tham khảo để lựa chọn cấu hình phù hợp.</p>
               </div>
-            ))
+            </div>
+          )}
+
+          {/* CONTENT: DEVICE MODE */}
+          {calcMode === 'device' && (
+            <>
+              <div className="flex justify-between items-center text-xs text-slate-400 mb-2 px-1">
+                <span>Danh sách đã chọn</span>
+                <span className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">{selectedAppliances.length}</span>
+              </div>
+
+              {selectedAppliances.length === 0 ? (
+                <div className="h-64 flex flex-col items-center justify-center text-slate-400 border-2 border-dashed border-slate-200 rounded-xl">
+                  <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mb-3">
+                    <Plus size={24} className="text-slate-300" />
+                  </div>
+                  <p>Danh sách trống</p>
+                  <p className="text-xs mt-1 opacity-70">Chọn thiết bị từ danh sách bên trái</p>
+                </div>
+              ) : (
+                selectedAppliances.map(item => (
+                  <div key={item.id} className="bg-white border border-slate-200 rounded-xl p-3 shadow-sm hover:shadow-md transition-all group animate-fade-in">
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex items-center gap-2">
+                        <div className="font-semibold text-slate-800 text-sm line-clamp-1" title={item.name}>{item.name}</div>
+                      </div>
+                      <button 
+                        onClick={() => handleRemoveAppliance(item.id)} 
+                        className="text-slate-300 hover:text-red-500 transition-colors p-1 -mr-1"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                    
+                    <div className="flex items-center justify-between mb-3 bg-slate-50 rounded-lg p-1.5 border border-slate-100">
+                      <span className="text-xs text-slate-500 font-medium ml-1">Số lượng</span>
+                      <div className="flex items-center gap-2">
+                          <button onClick={() => handleUpdateQuantity(item.id, -1)} className="w-6 h-6 flex items-center justify-center bg-white rounded shadow-sm text-slate-600 hover:text-emerald-600 text-xs font-bold">-</button>
+                          <span className="font-semibold w-6 text-center text-sm text-slate-700">{item.quantity}</span>
+                          <button onClick={() => handleUpdateQuantity(item.id, 1)} className="w-6 h-6 flex items-center justify-center bg-white rounded shadow-sm text-slate-600 hover:text-emerald-600 text-xs font-bold">+</button>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div>
+                        <label className="text-[10px] uppercase tracking-wider text-slate-400 font-bold block mb-1 flex items-center gap-1">
+                          <Gauge size={10} /> Công suất (W)
+                        </label>
+                        <input 
+                          type="number" 
+                          min="0"
+                          value={item.watts}
+                          onChange={(e) => handleUpdateWatts(item.id, parseFloat(e.target.value))}
+                          className="w-full bg-white border border-slate-200 rounded-md px-2 py-1 text-center text-slate-700 font-medium focus:ring-1 focus:ring-emerald-500 focus:outline-none text-xs"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="text-[10px] uppercase tracking-wider text-slate-400 font-bold block mb-1 flex items-center gap-1">
+                          <Clock size={10} /> Dùng (h/ngày)
+                        </label>
+                        <input 
+                          type="number" 
+                          min="0" max="24" step="0.5"
+                          value={item.hoursPerDay}
+                          onChange={(e) => handleUpdateHours(item.id, parseFloat(e.target.value))}
+                          className="w-full bg-white border border-slate-200 rounded-md px-2 py-1 text-center text-slate-700 font-medium focus:ring-1 focus:ring-emerald-500 focus:outline-none text-xs"
+                        />
+                      </div>
+                    </div>
+                    <div className="mt-2 pt-2 border-t border-slate-50 flex justify-between items-center">
+                      <span className="text-[10px] text-slate-400">Tiêu thụ:</span>
+                      <span className="font-bold text-emerald-600 text-xs">{(item.quantity * item.watts * item.hoursPerDay).toLocaleString()} Wh/ngày</span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </>
           )}
         </div>
 
@@ -348,14 +451,20 @@ export default function App() {
               <span className="text-slate-500">Hệ thống Solar cần</span>
               <span className="font-bold text-emerald-600 text-lg">{result.requiredSystemSizeKWp} kWp</span>
             </div>
+             {result.recommendedBatterySizeKWh && (
+              <div className="flex justify-between items-center text-sm text-emerald-600">
+                <span className="flex items-center gap-1"><Battery size={14} /> Pin lưu trữ</span>
+                <span className="font-bold">{result.recommendedBatterySizeKWh} kWh</span>
+              </div>
+            )}
           </div>
 
           <button 
             onClick={() => setActiveTab('report')}
-            disabled={selectedAppliances.length === 0}
+            disabled={calcMode === 'device' && selectedAppliances.length === 0}
             className="w-full bg-slate-900 hover:bg-slate-800 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-slate-900/20 flex items-center justify-center gap-2 active:scale-95"
           >
-            <Zap size={20} className={selectedAppliances.length > 0 ? "fill-yellow-400 text-yellow-400" : ""} />
+            <Zap size={20} className={result.requiredSystemSizeKWp > 0 ? "fill-yellow-400 text-yellow-400" : ""} />
             Xem Báo Cáo Tư Vấn
           </button>
           
