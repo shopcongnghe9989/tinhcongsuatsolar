@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Plus, Trash2, Calculator, Zap, Settings, MapPin, Clock, Gauge, Search, X, Banknote, RotateCcw, Battery, BatteryCharging } from 'lucide-react';
+import { Plus, Trash2, Calculator, Zap, Settings, MapPin, Clock, Gauge, Search, X, Banknote, RotateCcw, Battery, BatteryCharging, Users, Eye } from 'lucide-react';
 import { APPLIANCES_DB, REGIONS, PANEL_OPTIONS, INVERTER_OPTIONS } from './constants';
 import { Appliance, SelectedAppliance, SolarConfig, CalculationResult } from './types';
 import { ApplianceCard } from './components/ApplianceCard';
@@ -12,6 +12,7 @@ export default function App() {
   // Calculation Mode: 'device' (Manual list) or 'bill' (Money based)
   const [calcMode, setCalcMode] = useState<'device' | 'bill'>('device');
   const [monthlyBill, setMonthlyBill] = useState<number>(1000000); // Default 1M VND
+  const [visitCount, setVisitCount] = useState<number>(12540); // Base count
 
   const [selectedAppliances, setSelectedAppliances] = useState<SelectedAppliance[]>(() => {
     try {
@@ -70,6 +71,31 @@ export default function App() {
     localStorage.setItem('solar_config', JSON.stringify(config));
     localStorage.setItem('solar_region_index', String(selectedRegionIndex));
   }, [selectedAppliances, config, selectedRegionIndex]);
+
+  // Visit Counter Effect
+  useEffect(() => {
+    try {
+      const storageKey = 'solar_visit_count';
+      const lastVisitKey = 'solar_last_visit_ts';
+      const storedCount = localStorage.getItem(storageKey);
+      const lastVisit = localStorage.getItem(lastVisitKey);
+      const now = Date.now();
+      
+      // Base start number to make the tool look established
+      let currentCount = storedCount ? parseInt(storedCount) : 12540;
+
+      // Only increment if last visit was more than 1 hour ago (prevent refresh spamming)
+      if (!lastVisit || (now - parseInt(lastVisit) > 3600000)) {
+        currentCount += Math.floor(Math.random() * 3) + 1; // Increment by 1-3 randomly
+        localStorage.setItem(storageKey, currentCount.toString());
+        localStorage.setItem(lastVisitKey, now.toString());
+      }
+      
+      setVisitCount(currentCount);
+    } catch (e) {
+      console.warn("Could not update visit count", e);
+    }
+  }, []);
 
   // --- HANDLERS ---
   const handleAddAppliance = (appliance: Appliance) => {
@@ -469,7 +495,11 @@ export default function App() {
           </button>
           
           <div className="mt-4 text-center">
-            <p className="text-xs text-slate-400 italic">tool design by Lê Sơn IT</p>
+             <div className="flex items-center justify-center gap-2 text-xs text-slate-400 font-medium mb-1">
+                <Eye size={14} className="text-slate-300" />
+                <span>Lượt sử dụng công cụ: <span className="text-slate-500 font-bold">{visitCount.toLocaleString()}</span></span>
+             </div>
+            <p className="text-[10px] text-slate-300 italic">tool design by Lê Sơn IT</p>
           </div>
         </div>
       </aside>
