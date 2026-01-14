@@ -26,6 +26,14 @@ export interface Inverter {
   type: '1-Phase' | '3-Phase';
 }
 
+export interface StringDesign {
+  totalStrings: number;
+  panelsPerString: number;
+  connectionType: string; // e.g., "Nối tiếp (Series)"
+  inputMode: string; // e.g., "1 MPPT" or "2 MPPT độc lập"
+  stringVoltage: number; // Estimated voltage
+}
+
 export interface CalculationResult {
   totalDailyConsumptionWh: number;
   monthlyConsumptionKWh: number;
@@ -34,4 +42,5 @@ export interface CalculationResult {
   estimatedDailyProductionKWh: number;
   recommendedInverter: Inverter | null;
   recommendedBatterySizeKWh?: number; // Recommended battery capacity
+  stringDesign?: StringDesign; // Technical wiring design
 }

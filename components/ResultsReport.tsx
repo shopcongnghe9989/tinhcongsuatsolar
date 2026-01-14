@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { CalculationResult, SelectedAppliance, SolarConfig } from '../types';
 import { generateSolarConsultation } from '../services/geminiService';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from 'recharts';
-import { FileText, Sun, Battery, DollarSign, ArrowLeft, Loader2, Share2, Printer, Box, Download } from 'lucide-react';
+import { FileText, Sun, Battery, DollarSign, ArrowLeft, Loader2, Share2, Printer, Box, Download, Cable } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { PANEL_OPTIONS } from '../constants';
 import html2canvas from 'html2canvas';
@@ -294,6 +294,24 @@ export const ResultsReport: React.FC<ResultsReportProps> = ({ selectedAppliances
                               <td className="px-4 py-4 text-center font-bold text-emerald-600 bg-emerald-50 rounded-lg">{result.numberOfPanels}</td>
                               <td className="px-4 py-4 text-right">Bảo hành 12 năm</td>
                           </tr>
+                          
+                          {/* NEW: String Design Row */}
+                          {result.stringDesign && (
+                            <tr className="bg-blue-50/50 hover:bg-blue-50 transition-colors">
+                                <td className="px-4 py-4 font-medium text-blue-800 flex items-center gap-2">
+                                  <Cable size={16} /> Đấu nối chuỗi (String)
+                                </td>
+                                <td className="px-4 py-4 font-medium text-blue-800">
+                                   {result.stringDesign.totalStrings} chuỗi x {result.stringDesign.panelsPerString} tấm. 
+                                   <span className="block text-xs text-slate-500 font-normal mt-0.5">
+                                      Áp: ~{result.stringDesign.stringVoltage}V | {result.stringDesign.inputMode}
+                                   </span>
+                                </td>
+                                <td className="px-4 py-4 text-center font-bold text-slate-700">{result.stringDesign.totalStrings}</td>
+                                <td className="px-4 py-4 text-right">{result.stringDesign.connectionType}</td>
+                            </tr>
+                          )}
+
                           <tr className="hover:bg-slate-50 transition-colors">
                               <td className="px-4 py-4 font-medium text-slate-900">Biến tần (Inverter)</td>
                               <td className="px-4 py-4">{result.recommendedInverter?.label}</td>

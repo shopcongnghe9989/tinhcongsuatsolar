@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Plus, Trash2, Calculator, Zap, Settings, MapPin, Clock, Gauge, Search, X, Banknote, RotateCcw, Battery, BatteryCharging, Users, Eye } from 'lucide-react';
 import { APPLIANCES_DB, REGIONS, PANEL_OPTIONS, INVERTER_OPTIONS } from './constants';
-import { Appliance, SelectedAppliance, SolarConfig, CalculationResult } from './types';
+import { Appliance, SelectedAppliance, SolarConfig, CalculationResult, StringDesign } from './types';
 import { ApplianceCard } from './components/ApplianceCard';
 import { ResultsReport } from './components/ResultsReport';
 
@@ -188,6 +188,55 @@ export default function App() {
 
     const suitableInverter = INVERTER_OPTIONS.find(inv => inv.capacity >= requiredSystemSizeKWp * 0.85) || INVERTER_OPTIONS[INVERTER_OPTIONS.length - 1];
 
+    // --- Technical String Sizing Logic ---
+    // Assumptions:
+    // Panel Voc (Open Circuit Voltage) approx 50V for modern 450-550W panels.
+    // Temperature Coefficient Safety Factor: 1.15 (Voltage rises as temp drops)
+    
+    const panelVoc = 50; // Volts
+    const tempSafetyFactor = 1.15;
+    const isThreePhase = suitableInverter.type === '3-Phase';
+    
+    // Inverter Max Input Voltage Limits
+    const maxInverterVoltage = isThreePhase ? 1000 : 550;
+    
+    // Calculate max panels allowed in a single series string safely
+    const maxPanelsPerString = Math.floor(maxInverterVoltage / (panelVoc * tempSafetyFactor));
+    
+    let stringDesign: StringDesign;
+
+    if (numberOfPanels <= maxPanelsPerString) {
+      // Scenario A: All panels fit in one string within voltage limits
+      stringDesign = {
+        totalStrings: 1,
+        panelsPerString: numberOfPanels,
+        connectionType: '1 Chuỗi Nối tiếp (Series)',
+        inputMode: '1 MPPT',
+        stringVoltage: numberOfPanels * panelVoc
+      };
+    } else {
+      // Scenario B: Voltage exceeds limit, split into 2 strings
+      // We prioritize balancing the strings.
+      const panelsStr1 = Math.ceil(numberOfPanels / 2);
+      const panelsStr2 = Math.floor(numberOfPanels / 2);
+      
+      // Determine MPPT Mode
+      // If strings are unequal, they MUST use independent MPPTs.
+      // If strings are equal, they can be parallel or independent (Independent is better).
+      const inputModeLabel = (panelsStr1 !== panelsStr2) 
+        ? '2 MPPT Độc lập (Bắt buộc do lệch áp)' 
+        : '2 MPPT Độc lập (Khuyên dùng)';
+
+      stringDesign = {
+        totalStrings: 2,
+        panelsPerString: panelsStr1, // Show the count of the larger string for reference
+        connectionType: `Chia 2 giàn: ${panelsStr1} tấm & ${panelsStr2} tấm`,
+        inputMode: inputModeLabel,
+        stringVoltage: panelsStr1 * panelVoc // Voltage of the longest string
+      };
+    }
+    // -------------------------------------
+
     // Calculate Battery if selected
     // Rule of thumb: Storage for evening usage ~ 40-50% of daily generation for hybrid
     let recommendedBatterySizeKWh = 0;
@@ -204,7 +253,8 @@ export default function App() {
       numberOfPanels,
       estimatedDailyProductionKWh: Math.round(estimatedDailyProductionKWh * 10) / 10,
       recommendedInverter: suitableInverter,
-      recommendedBatterySizeKWh: config.includeBattery ? recommendedBatterySizeKWh : undefined
+      recommendedBatterySizeKWh: config.includeBattery ? recommendedBatterySizeKWh : undefined,
+      stringDesign // Include technical calculation
     };
   }, [selectedAppliances, config, calcMode, monthlyBill]);
 
