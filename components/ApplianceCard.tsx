@@ -49,17 +49,17 @@ const getApplianceMainIcon = (seed: string) => {
 
 export const ApplianceCard: React.FC<ApplianceCardProps> = ({ appliance, onAdd }) => {
   return (
-    <div className="group flex items-center p-3 bg-white rounded-xl border border-slate-100 hover:border-blue-300 hover:shadow-lg hover:shadow-blue-100/50 transition-all duration-300">
+    <div className="group flex items-center p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-500 hover:shadow-lg hover:shadow-blue-100/50 dark:hover:shadow-blue-900/20 transition-all duration-300">
       {/* Blue Vector Icon Container */}
-      <div className="relative w-14 h-14 rounded-xl overflow-hidden bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center flex-shrink-0 shadow-md shadow-blue-200 group-hover:shadow-blue-300 group-hover:scale-105 transition-all duration-300">
+      <div className="relative w-14 h-14 rounded-xl overflow-hidden bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center flex-shrink-0 shadow-md shadow-blue-200 dark:shadow-blue-900/40 group-hover:shadow-blue-300 dark:group-hover:shadow-blue-800 group-hover:scale-105 transition-all duration-300">
         {getApplianceMainIcon(appliance.imageSeed)}
       </div>
 
       {/* Info */}
       <div className="ml-4 flex-1">
-        <h3 className="font-bold text-slate-800 text-sm group-hover:text-blue-700 transition-colors">{appliance.name}</h3>
-        <div className="flex items-center gap-2 mt-1.5 text-xs text-slate-500">
-          <span className="flex items-center gap-1.5 font-medium bg-slate-50 px-2 py-0.5 rounded text-slate-600">
+        <h3 className="font-bold text-slate-800 dark:text-slate-100 text-sm group-hover:text-blue-700 dark:group-hover:text-blue-400 transition-colors">{appliance.name}</h3>
+        <div className="flex items-center gap-2 mt-1.5 text-xs text-slate-500 dark:text-slate-400">
+          <span className="flex items-center gap-1.5 font-medium bg-slate-50 dark:bg-slate-700 px-2 py-0.5 rounded text-slate-600 dark:text-slate-300">
              {getCategoryIcon(appliance.category)} {appliance.category}
           </span>
         </div>
@@ -68,7 +68,7 @@ export const ApplianceCard: React.FC<ApplianceCardProps> = ({ appliance, onAdd }
        {/* Wattage Badge (moved to right for cleaner look) */}
       <div className="flex flex-col items-end gap-2">
           <div className="group/tooltip relative">
-            <span className="flex items-center gap-1 bg-slate-100 text-slate-600 px-2 py-1 rounded-md border border-slate-200 font-bold text-xs cursor-help hover:bg-white hover:border-blue-200 hover:text-blue-600 transition-colors">
+            <span className="flex items-center gap-1 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-1 rounded-md border border-slate-200 dark:border-slate-600 font-bold text-xs cursor-help hover:bg-white dark:hover:bg-slate-600 hover:border-blue-200 hover:text-blue-600 dark:hover:text-blue-300 transition-colors">
                {appliance.defaultWatts}W
             </span>
             {/* Tooltip Content */}
@@ -82,7 +82,7 @@ export const ApplianceCard: React.FC<ApplianceCardProps> = ({ appliance, onAdd }
           {/* Action */}
           <button
             onClick={() => onAdd(appliance)}
-            className="p-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-all shadow-sm active:scale-95"
+            className="p-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-600 hover:text-white dark:hover:bg-blue-500 transition-all shadow-sm active:scale-95"
             title="Thêm thiết bị"
           >
             <Plus size={18} />

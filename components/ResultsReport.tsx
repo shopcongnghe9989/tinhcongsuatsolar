@@ -123,17 +123,17 @@ export const ResultsReport: React.FC<ResultsReportProps> = ({ selectedAppliances
     <div className="max-w-6xl mx-auto pb-20 animate-fade-in px-4 md:px-8 pt-8">
       {/* HEADER ACTIONS */}
       <div className="mb-8 flex flex-col md:flex-row items-center justify-between gap-4">
-        <button onClick={onBack} className="flex items-center gap-2 text-slate-600 hover:text-emerald-600 transition-colors font-medium bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm">
+        <button onClick={onBack} className="flex items-center gap-2 text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors font-medium bg-white dark:bg-slate-800 px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm">
           <ArrowLeft size={20} /> Quay lại chỉnh sửa
         </button>
         <div className="flex gap-3">
-          <button className="flex items-center gap-2 px-4 py-2 bg-white text-slate-600 hover:bg-slate-50 border border-slate-200 rounded-lg shadow-sm" onClick={() => window.print()}>
+          <button className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm transition-colors" onClick={() => window.print()}>
             <Printer size={18} /> In báo cáo
           </button>
           <button 
             onClick={handleDownloadPDF}
             disabled={isGeneratingPdf}
-            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white hover:bg-emerald-700 rounded-lg shadow-lg shadow-emerald-900/20 disabled:opacity-70 disabled:cursor-wait"
+            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white hover:bg-emerald-700 rounded-lg shadow-lg shadow-emerald-900/20 disabled:opacity-70 disabled:cursor-wait transition-colors"
           >
             {isGeneratingPdf ? <Loader2 size={18} className="animate-spin" /> : <Download size={18} />}
             {isGeneratingPdf ? 'Đang tạo PDF...' : 'Tải PDF báo cáo'}
@@ -142,10 +142,10 @@ export const ResultsReport: React.FC<ResultsReportProps> = ({ selectedAppliances
       </div>
 
       {/* REPORT CONTENT TO BE CAPTURED */}
-      <div ref={reportRef} className="bg-slate-50 p-4 md:p-8 -mx-4 md:-mx-8 rounded-xl">
+      <div ref={reportRef} className="bg-slate-50 dark:bg-slate-900 p-4 md:p-8 -mx-4 md:-mx-8 rounded-xl transition-colors">
         <div className="text-center mb-10">
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Báo Cáo Tư Vấn Điện Mặt Trời</h1>
-          <p className="text-slate-500">Được tạo tự động bởi SolarExpert VN AI</p>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">Báo Cáo Tư Vấn Điện Mặt Trời</h1>
+          <p className="text-slate-500 dark:text-slate-400">Được tạo tự động bởi SolarExpert VN AI</p>
           <p className="text-xs text-slate-400 mt-1">Ngày tạo: {new Date().toLocaleDateString('vi-VN')}</p>
         </div>
 
@@ -168,26 +168,26 @@ export const ResultsReport: React.FC<ResultsReportProps> = ({ selectedAppliances
             </div>
           </div>
 
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-             <div className="flex items-center gap-3 mb-4 text-slate-500">
-               <div className="bg-amber-100 p-2 rounded-lg text-amber-600"><Sun size={24} /></div>
-              <span className="font-medium text-lg text-slate-700">Sản lượng dự kiến</span>
+          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm transition-colors">
+             <div className="flex items-center gap-3 mb-4 text-slate-500 dark:text-slate-400">
+               <div className="bg-amber-100 dark:bg-amber-900/30 p-2 rounded-lg text-amber-600 dark:text-amber-400"><Sun size={24} /></div>
+              <span className="font-medium text-lg text-slate-700 dark:text-slate-300">Sản lượng dự kiến</span>
             </div>
-            <div className="text-4xl font-bold text-slate-800 mb-2">{result.estimatedDailyProductionKWh} <span className="text-xl text-slate-400 font-normal">kWh/ngày</span></div>
-            <div className="text-slate-500 text-sm mt-2">
+            <div className="text-4xl font-bold text-slate-800 dark:text-white mb-2">{result.estimatedDailyProductionKWh} <span className="text-xl text-slate-400 font-normal">kWh/ngày</span></div>
+            <div className="text-slate-500 dark:text-slate-400 text-sm mt-2">
               Tương đương <strong>{(result.estimatedDailyProductionKWh * 30).toFixed(0)} kWh/tháng</strong>
             </div>
           </div>
 
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-             <div className="flex items-center gap-3 mb-4 text-slate-500">
-              <div className="bg-emerald-100 p-2 rounded-lg text-emerald-600"><DollarSign size={24} /></div>
-              <span className="font-medium text-lg text-slate-700">Tiết kiệm ước tính</span>
+          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm transition-colors">
+             <div className="flex items-center gap-3 mb-4 text-slate-500 dark:text-slate-400">
+              <div className="bg-emerald-100 dark:bg-emerald-900/30 p-2 rounded-lg text-emerald-600 dark:text-emerald-400"><DollarSign size={24} /></div>
+              <span className="font-medium text-lg text-slate-700 dark:text-slate-300">Tiết kiệm ước tính</span>
             </div>
-            <div className="text-4xl font-bold text-slate-800 mb-2">
+            <div className="text-4xl font-bold text-slate-800 dark:text-white mb-2">
                {(Math.min(result.estimatedDailyProductionKWh * 30, result.monthlyConsumptionKWh) * 2500 / 1000000).toFixed(2)} <span className="text-xl text-slate-400 font-normal">triệu đ/tháng</span>
             </div>
-            <div className="text-slate-500 text-sm mt-2">
+            <div className="text-slate-500 dark:text-slate-400 text-sm mt-2">
               Tính theo giá điện trung bình 2.500đ
             </div>
           </div>
@@ -196,20 +196,20 @@ export const ResultsReport: React.FC<ResultsReportProps> = ({ selectedAppliances
         {/* CHARTS SECTION */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
           {/* Cost Comparison Chart - Updated */}
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-            <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
+          <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm transition-colors">
+            <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-6 flex items-center gap-2">
               <DollarSign className="text-emerald-500" size={20} />
               So sánh chi phí điện hàng tháng
             </h3>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={costComparisonData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" className="dark:opacity-10" />
                   <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} />
                   <YAxis hide />
                   <RechartsTooltip 
                     formatter={(value: number) => [`${value.toLocaleString()} đ`, '']}
-                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', color: '#1e293b' }}
                   />
                   <Legend iconType="circle" />
                   <Bar name="Hiện tại" dataKey="Hiện tại" fill="#94a3b8" radius={[4, 4, 0, 0]} barSize={20} />
@@ -221,8 +221,8 @@ export const ResultsReport: React.FC<ResultsReportProps> = ({ selectedAppliances
           </div>
 
           {/* Consumption Pie Chart */}
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-            <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
+          <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm transition-colors">
+            <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-6 flex items-center gap-2">
               <FileText className="text-blue-500" size={20} />
               Phân bổ tiêu thụ theo nhóm
             </h3>
@@ -243,7 +243,7 @@ export const ResultsReport: React.FC<ResultsReportProps> = ({ selectedAppliances
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
-                    <RechartsTooltip formatter={(value: number) => `${(value / 1000).toFixed(2)} kWh`} />
+                    <RechartsTooltip formatter={(value: number) => `${(value / 1000).toFixed(2)} kWh`} contentStyle={{ color: '#1e293b' }} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
@@ -251,8 +251,8 @@ export const ResultsReport: React.FC<ResultsReportProps> = ({ selectedAppliances
                  {categoryData.map((entry, index) => (
                    <div key={index} className="flex items-center gap-2">
                      <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: COLORS[index % COLORS.length] }}></div>
-                     <span className="text-slate-600 truncate flex-1">{entry.name}</span>
-                     <span className="font-medium text-slate-900">{(entry.value / 1000).toFixed(1)} kWh</span>
+                     <span className="text-slate-600 dark:text-slate-300 truncate flex-1">{entry.name}</span>
+                     <span className="font-medium text-slate-900 dark:text-white">{(entry.value / 1000).toFixed(1)} kWh</span>
                    </div>
                  ))}
               </div>
@@ -262,24 +262,24 @@ export const ResultsReport: React.FC<ResultsReportProps> = ({ selectedAppliances
 
         {/* SYSTEM CONFIG TABLE & AI ADVICE */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+          <div className="lg:col-span-2 bg-white dark:bg-slate-800 p-8 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm transition-colors">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
                     <Box className="text-emerald-500" size={20} />
                     Chi tiết cấu hình hệ thống
                 </h3>
-                {/* Tech Design Button - Updated to trigger modal or separate view */}
+                {/* Tech Design Button - Updated to be clearer and more prominent */}
                 <button 
                   onClick={onOpenTechDesign}
-                  className="flex items-center gap-2 text-xs font-bold bg-blue-50 text-blue-600 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors border border-blue-200"
+                  className="flex items-center gap-2 text-sm font-bold bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-all shadow-md shadow-indigo-500/20 active:scale-95 w-full sm:w-auto justify-center"
                 >
-                  <Wrench size={14} /> Mở Hồ Sơ Kỹ Thuật (KTV)
+                  <Wrench size={16} /> Mở Hồ Sơ Kỹ Thuật (Schematic)
                 </button>
               </div>
               
               <div className="overflow-x-auto">
-                  <table className="w-full text-sm text-left text-slate-600">
-                      <thead className="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-100">
+                  <table className="w-full text-sm text-left text-slate-600 dark:text-slate-300">
+                      <thead className="text-xs text-slate-500 dark:text-slate-400 uppercase bg-slate-50 dark:bg-slate-700/50 border-b border-slate-100 dark:border-slate-700">
                           <tr>
                               <th className="px-4 py-3 rounded-tl-lg">Hạng mục</th>
                               <th className="px-4 py-3">Thiết bị / Vật tư</th>
@@ -287,47 +287,47 @@ export const ResultsReport: React.FC<ResultsReportProps> = ({ selectedAppliances
                               <th className="px-4 py-3 rounded-tr-lg text-right">Ghi chú</th>
                           </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100">
-                          <tr className="hover:bg-slate-50 transition-colors">
-                              <td className="px-4 py-4 font-medium text-slate-900">Tấm pin NLMT</td>
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                          <tr className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                              <td className="px-4 py-4 font-medium text-slate-900 dark:text-white">Tấm pin NLMT</td>
                               <td className="px-4 py-4">{panelName}</td>
-                              <td className="px-4 py-4 text-center font-bold text-emerald-600 bg-emerald-50 rounded-lg">{result.numberOfPanels}</td>
+                              <td className="px-4 py-4 text-center font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg">{result.numberOfPanels}</td>
                               <td className="px-4 py-4 text-right">Bảo hành 12 năm</td>
                           </tr>
 
-                          <tr className="hover:bg-slate-50 transition-colors">
-                              <td className="px-4 py-4 font-medium text-slate-900">Biến tần (Inverter)</td>
+                          <tr className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                              <td className="px-4 py-4 font-medium text-slate-900 dark:text-white">Biến tần (Inverter)</td>
                               <td className="px-4 py-4">{result.recommendedInverter?.label}</td>
-                              <td className="px-4 py-4 text-center font-bold text-slate-700">1</td>
+                              <td className="px-4 py-4 text-center font-bold text-slate-700 dark:text-slate-300">1</td>
                               <td className="px-4 py-4 text-right">Bảo hành 5 năm</td>
                           </tr>
                           {/* Battery Row - Conditionally Rendered */}
                           {result.recommendedBatterySizeKWh && (
-                            <tr className="hover:bg-slate-50 transition-colors bg-emerald-50/50">
-                                <td className="px-4 py-4 font-medium text-emerald-800 flex items-center gap-2">
+                            <tr className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors bg-emerald-50/50 dark:bg-emerald-900/10">
+                                <td className="px-4 py-4 font-medium text-emerald-800 dark:text-emerald-400 flex items-center gap-2">
                                   <Battery size={16} /> Pin lưu trữ
                                 </td>
-                                <td className="px-4 py-4 font-medium text-emerald-800">Pack Pin Lithium-ion {result.recommendedBatterySizeKWh}kWh</td>
-                                <td className="px-4 py-4 text-center font-bold text-slate-700">1</td>
+                                <td className="px-4 py-4 font-medium text-emerald-800 dark:text-emerald-400">Pack Pin Lithium-ion {result.recommendedBatterySizeKWh}kWh</td>
+                                <td className="px-4 py-4 text-center font-bold text-slate-700 dark:text-slate-300">1</td>
                                 <td className="px-4 py-4 text-right">Lưu trữ cho ban đêm</td>
                             </tr>
                           )}
-                          <tr className="hover:bg-slate-50 transition-colors">
-                              <td className="px-4 py-4 font-medium text-slate-900">Hệ thống khung</td>
+                          <tr className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                              <td className="px-4 py-4 font-medium text-slate-900 dark:text-white">Hệ thống khung</td>
                               <td className="px-4 py-4">Khung nhôm định hình Anode hóa, kẹp biên, kẹp giữa</td>
-                              <td className="px-4 py-4 text-center font-bold text-slate-700">1</td>
+                              <td className="px-4 py-4 text-center font-bold text-slate-700 dark:text-slate-300">1</td>
                               <td className="px-4 py-4 text-right">Áp mái tôn/ngói</td>
                           </tr>
-                           <tr className="hover:bg-slate-50 transition-colors">
-                              <td className="px-4 py-4 font-medium text-slate-900">Tủ điện bảo vệ</td>
+                           <tr className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                              <td className="px-4 py-4 font-medium text-slate-900 dark:text-white">Tủ điện bảo vệ</td>
                               <td className="px-4 py-4">Tủ điện IP65, CB DC 1000V, CB AC, Chống sét lan truyền</td>
-                              <td className="px-4 py-4 text-center font-bold text-slate-700">1</td>
+                              <td className="px-4 py-4 text-center font-bold text-slate-700 dark:text-slate-300">1</td>
                               <td className="px-4 py-4 text-right">Full phụ kiện</td>
                           </tr>
-                          <tr className="hover:bg-slate-50 transition-colors">
-                              <td className="px-4 py-4 font-medium text-slate-900">Vật tư thi công</td>
+                          <tr className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                              <td className="px-4 py-4 font-medium text-slate-900 dark:text-white">Vật tư thi công</td>
                               <td className="px-4 py-4">Cáp điện DC chuyên dụng 4.0mm2, ống luồn dây, đầu cốt...</td>
-                              <td className="px-4 py-4 text-center font-bold text-slate-700">1</td>
+                              <td className="px-4 py-4 text-center font-bold text-slate-700 dark:text-slate-300">1</td>
                               <td className="px-4 py-4 text-right">Trọn gói</td>
                           </tr>
                       </tbody>
@@ -336,7 +336,7 @@ export const ResultsReport: React.FC<ResultsReportProps> = ({ selectedAppliances
           </div>
 
           {/* AI ADVICE PANEL */}
-          <div className="bg-slate-900 text-slate-50 rounded-2xl p-8 shadow-xl relative overflow-hidden flex flex-col">
+          <div className="bg-slate-900 dark:bg-black text-slate-50 rounded-2xl p-8 shadow-xl relative overflow-hidden flex flex-col">
               <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500 rounded-full blur-3xl opacity-10 -mr-16 -mt-16 pointer-events-none"></div>
               <div className="relative z-10 flex-grow flex flex-col">
                 <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
