@@ -4,10 +4,11 @@ import { APPLIANCES_DB, REGIONS, PANEL_OPTIONS, INVERTER_OPTIONS } from './const
 import { Appliance, SelectedAppliance, SolarConfig, CalculationResult, StringDesign } from './types';
 import { ApplianceCard } from './components/ApplianceCard';
 import { ResultsReport } from './components/ResultsReport';
+import { TechnicianDesign } from './components/TechnicianDesign';
 
 export default function App() {
   // --- STATE ---
-  const [activeTab, setActiveTab] = useState<'input' | 'report'>('input');
+  const [activeTab, setActiveTab] = useState<'input' | 'report' | 'technician'>('input');
   
   // Calculation Mode: 'device' (Manual list) or 'bill' (Money based)
   const [calcMode, setCalcMode] = useState<'device' | 'bill'>('device');
@@ -224,7 +225,7 @@ export default function App() {
       // If strings are unequal, they MUST use independent MPPTs.
       // If strings are equal, they can be parallel or independent (Independent is better).
       const inputModeLabel = (panelsStr1 !== panelsStr2) 
-        ? '2 MPPT Độc lập (Bắt buộc do lệch áp)' 
+        ? '2 MPPT Độc lập' 
         : '2 MPPT Độc lập (Khuyên dùng)';
 
       stringDesign = {
@@ -265,13 +266,24 @@ export default function App() {
     );
   }, [searchTerm]);
 
+  if (activeTab === 'technician') {
+    return (
+      <TechnicianDesign 
+        config={config} 
+        result={result} 
+        onBack={() => setActiveTab('report')} 
+      />
+    );
+  }
+
   if (activeTab === 'report') {
     return (
       <ResultsReport 
         selectedAppliances={selectedAppliances} 
         config={config} 
         result={result} 
-        onBack={() => setActiveTab('input')} 
+        onBack={() => setActiveTab('input')}
+        onOpenTechDesign={() => setActiveTab('technician')}
       />
     );
   }

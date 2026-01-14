@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { CalculationResult, SelectedAppliance, SolarConfig } from '../types';
 import { generateSolarConsultation } from '../services/geminiService';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from 'recharts';
-import { FileText, Sun, Battery, DollarSign, ArrowLeft, Loader2, Share2, Printer, Box, Download, Cable } from 'lucide-react';
+import { FileText, Sun, Battery, DollarSign, ArrowLeft, Loader2, Share2, Printer, Box, Download, Cable, Wrench } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { PANEL_OPTIONS } from '../constants';
 import html2canvas from 'html2canvas';
@@ -13,9 +13,10 @@ interface ResultsReportProps {
   config: SolarConfig;
   result: CalculationResult;
   onBack: () => void;
+  onOpenTechDesign: () => void;
 }
 
-export const ResultsReport: React.FC<ResultsReportProps> = ({ selectedAppliances, config, result, onBack }) => {
+export const ResultsReport: React.FC<ResultsReportProps> = ({ selectedAppliances, config, result, onBack, onOpenTechDesign }) => {
   const [advice, setAdvice] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
@@ -58,17 +59,6 @@ export const ResultsReport: React.FC<ResultsReportProps> = ({ selectedAppliances
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
 
-      // Add image to PDF. If height > page height, we'll just let it scale or cut for this simple version.
-      // For a better experience with long reports, we simply add it as a long image or just one page
-      // To keep it simple and fitting on A4 usually works for this layout if not too long.
-      // If it's very long, we might want to split, but for now single page resize is safest for layout integrity.
-      
-      // Calculate height to see if we need multiple pages, 
-      // but simplistic approach: fit width, let height expand if needed (custom page size) 
-      // OR standard A4 (might shrink content).
-      // Let's use standard A4 and if it's too long, add a new page logic is complex with images.
-      // Better approach: Set PDF page height to match content height.
-      
       const contentHeightMM = pdfHeight;
       const pdfCustom = new jsPDF('p', 'mm', [pdfWidth, Math.max(contentHeightMM, 297)]);
       
@@ -273,10 +263,20 @@ export const ResultsReport: React.FC<ResultsReportProps> = ({ selectedAppliances
         {/* SYSTEM CONFIG TABLE & AI ADVICE */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
-              <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
-                  <Box className="text-emerald-500" size={20} />
-                  Chi tiết cấu hình hệ thống
-              </h3>
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <Box className="text-emerald-500" size={20} />
+                    Chi tiết cấu hình hệ thống
+                </h3>
+                {/* Tech Design Button - Updated to trigger modal or separate view */}
+                <button 
+                  onClick={onOpenTechDesign}
+                  className="flex items-center gap-2 text-xs font-bold bg-blue-50 text-blue-600 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors border border-blue-200"
+                >
+                  <Wrench size={14} /> Mở Hồ Sơ Kỹ Thuật (KTV)
+                </button>
+              </div>
+              
               <div className="overflow-x-auto">
                   <table className="w-full text-sm text-left text-slate-600">
                       <thead className="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-100">
@@ -294,23 +294,6 @@ export const ResultsReport: React.FC<ResultsReportProps> = ({ selectedAppliances
                               <td className="px-4 py-4 text-center font-bold text-emerald-600 bg-emerald-50 rounded-lg">{result.numberOfPanels}</td>
                               <td className="px-4 py-4 text-right">Bảo hành 12 năm</td>
                           </tr>
-                          
-                          {/* NEW: String Design Row */}
-                          {result.stringDesign && (
-                            <tr className="bg-blue-50/50 hover:bg-blue-50 transition-colors">
-                                <td className="px-4 py-4 font-medium text-blue-800 flex items-center gap-2">
-                                  <Cable size={16} /> Đấu nối chuỗi (String)
-                                </td>
-                                <td className="px-4 py-4 font-medium text-blue-800">
-                                   {result.stringDesign.totalStrings} chuỗi x {result.stringDesign.panelsPerString} tấm. 
-                                   <span className="block text-xs text-slate-500 font-normal mt-0.5">
-                                      Áp: ~{result.stringDesign.stringVoltage}V | {result.stringDesign.inputMode}
-                                   </span>
-                                </td>
-                                <td className="px-4 py-4 text-center font-bold text-slate-700">{result.stringDesign.totalStrings}</td>
-                                <td className="px-4 py-4 text-right">{result.stringDesign.connectionType}</td>
-                            </tr>
-                          )}
 
                           <tr className="hover:bg-slate-50 transition-colors">
                               <td className="px-4 py-4 font-medium text-slate-900">Biến tần (Inverter)</td>
