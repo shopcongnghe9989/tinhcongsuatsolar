@@ -1,5 +1,5 @@
-import React from 'react';
-import { ArrowLeft, Cable, Zap, Cpu, Battery, Sun, Maximize2, GitMerge, AlertTriangle, Download, Printer } from 'lucide-react';
+import React, { useState } from 'react';
+import { ArrowLeft, Cable, Zap, Cpu, Battery, Sun, CloudRain, CloudSun, Printer, AlertTriangle } from 'lucide-react';
 import { CalculationResult, SolarConfig } from '../types';
 
 interface TechnicianDesignProps {
@@ -10,9 +10,9 @@ interface TechnicianDesignProps {
 
 export const TechnicianDesign: React.FC<TechnicianDesignProps> = ({ config, result, onBack }) => {
   const { stringDesign, recommendedInverter } = result;
-  
+  const [sunIntensity, setSunIntensity] = useState<number>(100); // 0 to 100%
+
   // Heuristic for cable sizing based on current
-  // Standard PV cable is 4.0mm2 or 6.0mm2. 4.0 is usually fine for < 20A strings.
   const dcCableSize = "DC 4.0 mm² (Solar Cable)";
   
   // AC Cable sizing approximation
@@ -22,20 +22,39 @@ export const TechnicianDesign: React.FC<TechnicianDesignProps> = ({ config, resu
   
   if (inverterCapacity <= 3) { acCableSize = "2x2.5 mm² + E"; cbSize = "20A"; }
   else if (inverterCapacity <= 5.5) { acCableSize = "2x6.0 mm² + E"; cbSize = "40A"; }
-  else if (inverterCapacity <= 10) { acCableSize = "2x10.0 mm² + E"; cbSize = "63A"; } // Single phase high current or 3-phase lower
+  else if (inverterCapacity <= 10) { acCableSize = "2x10.0 mm² + E"; cbSize = "63A"; }
 
   if (recommendedInverter?.type === '3-Phase') {
      if (inverterCapacity <= 10) { acCableSize = "4x4.0 mm² + E"; cbSize = "25A (3P)"; }
      else { acCableSize = "4x10.0 mm² + E"; cbSize = "40A (3P)"; }
   }
 
-  // Voltage estimates
-  const vocPerPanel = 49.5; // Approx
-  const vmpPerPanel = 41.5; // Approx
-  const iscPerPanel = 11.5; // Approx
+  // --- REAL-TIME SIMULATION LOGIC ---
+  // Base STC Values
+  const baseVoc = 49.5; 
+  const baseVmp = 41.5; 
+  const baseIsc = 11.5; 
   
-  const stringVoc = stringDesign ? (stringDesign.stringVoltage).toFixed(1) : "0";
-  const stringVmp = stringDesign ? (stringDesign.panelsPerString * vmpPerPanel).toFixed(1) : "0";
+  // Simulation Factors
+  // Current (Amps) & Power (Watts) are roughly linear with irradiance.
+  // Voltage (Volts) drops logarithmically but stays relatively high until very low light.
+  // We simulate a simplified curve here.
+  const intensityFactor = sunIntensity / 100;
+  
+  // Voltage drops slightly as intensity decreases (approx 10-15% drop at low light before cutoff)
+  const voltageDropFactor = sunIntensity < 10 ? (sunIntensity / 10) : (0.9 + 0.1 * intensityFactor);
+  
+  const simWatts = Math.round(config.panelWattage * intensityFactor);
+  const simVoc = (baseVoc * voltageDropFactor).toFixed(1);
+  const simVmp = (baseVmp * voltageDropFactor).toFixed(1);
+  const simIsc = (baseIsc * intensityFactor).toFixed(1);
+  
+  const simStringVoc = stringDesign ? (Number(simVoc) * stringDesign.panelsPerString).toFixed(1) : "0";
+  const simStringVmp = stringDesign ? (Number(simVmp) * stringDesign.panelsPerString).toFixed(1) : "0";
+
+  // Visual Opacity for panels
+  const panelOpacity = Math.max(0.3, intensityFactor);
+  const panelColorIntensity = Math.max(50, Math.floor(intensityFactor * 600)); // Dynamic blue shade
 
   return (
     <div className="max-w-6xl mx-auto pb-20 px-4 md:px-8 pt-6 font-mono text-slate-800 animate-fade-in">
@@ -63,20 +82,63 @@ export const TechnicianDesign: React.FC<TechnicianDesignProps> = ({ config, resu
         {/* LEFT COLUMN: DIAGRAM */}
         <div className="lg:col-span-2 space-y-6">
             
+            {/* SUNLIGHT SIMULATOR CONTROL */}
+            <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-orange-200 rounded-xl p-4 shadow-sm">
+                <div className="flex justify-between items-center mb-2">
+                    <label className="text-sm font-bold text-orange-800 flex items-center gap-2">
+                        <Sun className="text-orange-500" size={18} />
+                        GIẢ LẬP CƯỜNG ĐỘ NẮNG (Simulation)
+                    </label>
+                    <span className="bg-white text-orange-600 font-bold px-2 py-1 rounded border border-orange-200 text-xs">
+                        {sunIntensity}% - {simWatts}W/tấm
+                    </span>
+                </div>
+                <div className="flex items-center gap-4">
+                    <CloudRain size={20} className="text-slate-400" />
+                    <input 
+                        type="range" 
+                        min="0" 
+                        max="100" 
+                        value={sunIntensity} 
+                        onChange={(e) => setSunIntensity(Number(e.target.value))}
+                        className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-orange-500"
+                    />
+                    <Sun size={24} className="text-orange-500 animate-pulse" style={{ opacity: Math.max(0.3, intensityFactor) }} />
+                </div>
+                <div className="flex justify-between text-[10px] text-slate-500 mt-1 font-sans">
+                    <span>Mưa / Đêm (0V)</span>
+                    <span>Râm mát (~30%)</span>
+                    <span>Trung bình (~60%)</span>
+                    <span>Nắng đỉnh (STC)</span>
+                </div>
+            </div>
+
             {/* 1. PV Array Diagram */}
-            <div className="bg-white border border-slate-300 rounded-lg p-6 shadow-sm relative overflow-hidden">
+            <div className="bg-white border border-slate-300 rounded-lg p-6 shadow-sm relative overflow-hidden transition-colors duration-500">
                 <div className="absolute top-0 left-0 bg-blue-600 text-white text-[10px] px-2 py-1 rounded-br uppercase tracking-wider font-bold">Sơ đồ đấu nối DC</div>
                 
                 <div className="mt-6 flex flex-col items-center gap-8">
                     {/* Render Strings */}
                     {Array.from({ length: stringDesign?.totalStrings || 1 }).map((_, idx) => (
                         <div key={idx} className="w-full flex items-center gap-4">
-                            <div className="flex-1 border-2 border-dashed border-slate-300 rounded-xl p-3 bg-slate-50 flex flex-wrap gap-2 justify-center relative min-h-[80px]">
+                            <div className="flex-1 border-2 border-dashed border-slate-300 rounded-xl p-3 bg-slate-50 flex flex-wrap gap-2 justify-center relative min-h-[100px] transition-colors duration-300" style={{ backgroundColor: `rgba(255, 237, 213, ${intensityFactor * 0.1})` }}>
                                 <div className="absolute -top-3 left-4 bg-slate-200 text-slate-600 text-xs px-2 py-0.5 rounded border border-slate-300 font-bold">
                                     PV String {idx + 1}
                                 </div>
                                 {Array.from({ length: Math.min(10, stringDesign?.panelsPerString || 0) }).map((__, pIdx) => (
-                                    <div key={pIdx} className="w-8 h-12 bg-blue-500 border border-blue-600 rounded-sm shadow-sm" title="Panel"></div>
+                                    <div 
+                                      key={pIdx} 
+                                      className="w-12 h-16 border-b-4 border-r-2 rounded-sm shadow-sm flex flex-col items-center justify-center text-white transition-all duration-300" 
+                                      title="Panel"
+                                      style={{ 
+                                        backgroundColor: `rgb(37, 99, 235, ${panelOpacity})`, // Dynamic opacity
+                                        borderColor: `rgba(29, 78, 216, ${panelOpacity})`
+                                      }}
+                                    >
+                                        <div className="text-[10px] font-bold leading-none drop-shadow-md">{simWatts}W</div>
+                                        <div className="w-8 h-px bg-white/50 my-0.5"></div>
+                                        <div className="text-[9px] opacity-90 leading-none drop-shadow-md">{simVoc}V</div>
+                                    </div>
                                 ))}
                                 {(stringDesign?.panelsPerString || 0) > 10 && (
                                     <div className="flex items-center justify-center font-bold text-slate-400 text-xs">+{ (stringDesign?.panelsPerString || 0) - 10 }</div>
@@ -84,14 +146,17 @@ export const TechnicianDesign: React.FC<TechnicianDesignProps> = ({ config, resu
                             </div>
                             
                             {/* Connection Line */}
-                            <div className="w-12 h-0.5 bg-red-500 relative">
+                            <div className="w-12 h-0.5 bg-red-500 relative opacity-80">
                                 <span className="absolute -top-4 left-1/2 -translate-x-1/2 text-[10px] text-red-600 font-bold">DC+</span>
                             </div>
                             
                             {/* Inverter MPPT Input Representation */}
                             <div className="w-24 h-16 bg-slate-800 rounded-lg flex items-center justify-center text-white text-xs font-bold border-2 border-slate-600 relative">
                                 MPPT {idx + 1}
-                                <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-red-500 rounded-full"></div>
+                                <div className={`absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full transition-colors duration-300 ${sunIntensity > 0 ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]' : 'bg-slate-600'}`}></div>
+                                <div className="absolute -bottom-5 w-full text-center text-[9px] text-slate-500 font-normal">
+                                    {sunIntensity > 0 ? `${(Number(simIsc) * intensityFactor).toFixed(1)}A` : '0A'}
+                                </div>
                             </div>
                         </div>
                     ))}
@@ -116,11 +181,16 @@ export const TechnicianDesign: React.FC<TechnicianDesignProps> = ({ config, resu
                  )}
             </div>
 
-            {/* 2. Specs Table */}
-             <div className="bg-white border border-slate-300 rounded-lg overflow-hidden shadow-sm">
-                 <div className="bg-slate-100 px-4 py-2 border-b border-slate-200 font-bold text-sm text-slate-700 flex justify-between">
-                    <span>THÔNG SỐ VẬN HÀNH DỰ KIẾN (STC)</span>
-                    <span className="text-slate-400 font-normal text-xs">*Điều kiện tiêu chuẩn</span>
+            {/* 2. Specs Table - DYNAMIC */}
+             <div className="bg-white border border-slate-300 rounded-lg overflow-hidden shadow-sm transition-all">
+                 <div className={`px-4 py-2 border-b border-slate-200 font-bold text-sm flex justify-between items-center transition-colors ${sunIntensity < 100 ? 'bg-amber-100 text-amber-900' : 'bg-slate-100 text-slate-700'}`}>
+                    <span className="flex items-center gap-2">
+                        {sunIntensity < 100 ? <CloudSun size={16} /> : <Zap size={16} />}
+                        THÔNG SỐ VẬN HÀNH THỰC TẾ (SIMULATION)
+                    </span>
+                    <span className="font-normal text-xs opacity-80">
+                        {sunIntensity === 100 ? '*Điều kiện tiêu chuẩn (STC)' : `*Tại cường độ nắng ${sunIntensity}%`}
+                    </span>
                  </div>
                  <table className="w-full text-sm">
                      <tbody>
@@ -134,15 +204,15 @@ export const TechnicianDesign: React.FC<TechnicianDesignProps> = ({ config, resu
                          </tr>
                          <tr className="border-b border-slate-100">
                              <td className="px-4 py-2 text-slate-500">Điện áp hở mạch (Voc) / String</td>
-                             <td className="px-4 py-2 font-bold text-blue-600">~ {stringVoc} V</td>
+                             <td className="px-4 py-2 font-bold text-blue-600 transition-all duration-300">~ {simStringVoc} V</td>
                          </tr>
                          <tr className="border-b border-slate-100">
                              <td className="px-4 py-2 text-slate-500">Điện áp làm việc (Vmp) / String</td>
-                             <td className="px-4 py-2 font-bold text-emerald-600">~ {stringVmp} V</td>
+                             <td className="px-4 py-2 font-bold text-emerald-600 transition-all duration-300">~ {simStringVmp} V</td>
                          </tr>
                          <tr>
                              <td className="px-4 py-2 text-slate-500">Dòng ngắn mạch (Isc)</td>
-                             <td className="px-4 py-2 font-bold">~ {iscPerPanel} A</td>
+                             <td className="px-4 py-2 font-bold transition-all duration-300">~ {simIsc} A</td>
                          </tr>
                      </tbody>
                  </table>

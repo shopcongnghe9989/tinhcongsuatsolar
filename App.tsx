@@ -429,10 +429,13 @@ export default function App() {
                 <label className="block text-sm font-medium text-slate-700 mb-2">Nhập tiền điện trung bình / tháng (VNĐ)</label>
                 <div className="relative">
                   <input 
-                    type="number"
-                    value={monthlyBill}
-                    onChange={(e) => setMonthlyBill(Number(e.target.value))}
-                    step={100000}
+                    type="text"
+                    value={monthlyBill.toLocaleString('vi-VN')}
+                    onChange={(e) => {
+                      const rawValue = e.target.value.replace(/\D/g, '');
+                      setMonthlyBill(Number(rawValue));
+                    }}
+                    placeholder="0"
                     className="w-full pl-4 pr-12 py-3 text-lg font-bold text-slate-800 bg-emerald-50 border border-emerald-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                   />
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 text-emerald-600 font-bold text-sm">đ</span>
